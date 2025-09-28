@@ -1,16 +1,20 @@
-## Hi there 👋
+# Base44 App
 
-<!--
-**mysupertc/MySuperTC** is a ✨ _special_ ✨ repository because its `README.md` (this file) appears on your GitHub profile.
 
-Here are some ideas to get you started:
+This app was created automatically by Base44.
+It's a Vite+React app that communicates with the Base44 API.
 
-- 🔭 I’m currently working on ...
-- 🌱 I’m currently learning ...
-- 👯 I’m looking to collaborate on ...
-- 🤔 I’m looking for help with ...
-- 💬 Ask me about ...
-- 📫 How to reach me: ...
-- 😄 Pronouns: ...
-- ⚡ Fun fact: ...
--->
+## Running the app
+
+```bash
+npm install
+npm run dev
+```
+
+## Building the app
+
+```bash
+npm run build
+```
+
+For more information and support, please contact Base44 support at app@base44.com.
