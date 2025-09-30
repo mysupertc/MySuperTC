@@ -7,10 +7,10 @@ import { Home, FileText, Users, Calendar, Settings, Building, User, LogOut, Moon
 import { User as UserEntity } from '@/api/entities';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import FloatingChatWidget from './components/chat/FloatingChatWidget';
-import FloatingEmailWidget from './components/email/FloatingEmailWidget';
-import NotificationProvider from './components/notifications/NotificationProvider';
-import FloatingNotifications from './components/notifications/FloatingNotifications';
+import FloatingChatWidget from '../components/chat/FloatingChatWidget';
+import FloatingEmailWidget from '../components/email/FloatingEmailWidget';
+import NotificationProvider from '../components/notifications/NotificationProvider';
+import FloatingNotifications from '../components/notifications/FloatingNotifications';
 
 const navigationItems = [
   {
