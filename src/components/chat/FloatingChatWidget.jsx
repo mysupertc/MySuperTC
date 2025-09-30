@@ -17,7 +17,6 @@ import {
   Phone, // New import
   Building // New import
 } from 'lucide-react';
-import { agentSDK } from '@/agents';
 import ReactMarkdown from 'react-markdown';
 
 // New ContactCard Component
