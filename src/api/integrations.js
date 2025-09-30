@@ -1,27 +1,40 @@
 // src/api/integrations.js
-
-// Placeholder file after removing Base44 integrations.
-// We'll later replace this with Supabase or custom API logic.
+// Temporary stubbed integrations since Base44 was removed.
+// Replace with Supabase or other APIs later.
 
 export const Core = {};
+
 export const InvokeLLM = async () => {
-  throw new Error("InvokeLLM not implemented yet.");
+  console.warn("InvokeLLM is not implemented.");
+  return null;
 };
+
 export const SendEmail = async () => {
-  throw new Error("SendEmail not implemented yet.");
+  console.warn("SendEmail is not implemented.");
+  return null;
 };
+
 export const UploadFile = async () => {
-  throw new Error("UploadFile not implemented yet.");
+  console.warn("UploadFile is not implemented.");
+  return null;
 };
+
 export const GenerateImage = async () => {
-  throw new Error("GenerateImage not implemented yet.");
+  console.warn("GenerateImage is not implemented.");
+  return null;
 };
+
 export const ExtractDataFromUploadedFile = async () => {
-  throw new Error("ExtractDataFromUploadedFile not implemented yet.");
+  console.warn("ExtractDataFromUploadedFile is not implemented.");
+  return null;
 };
+
 export const CreateFileSignedUrl = async () => {
-  throw new Error("CreateFileSignedUrl not implemented yet.");
+  console.warn("CreateFileSignedUrl is not implemented.");
+  return null;
 };
+
 export const UploadPrivateFile = async () => {
-  throw new Error("UploadPrivateFile not implemented yet.");
-};s
+  console.warn("UploadPrivateFile is not implemented.");
+  return null;
+};
