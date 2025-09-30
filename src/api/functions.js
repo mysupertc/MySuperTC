@@ -1,27 +1,52 @@
-import { base44 } from './base44Client';
+// src/api/functions.js
 
+// Placeholder file after removing Base44 functions.
+// Later we’ll hook these up to Supabase or other APIs.
 
-export const fetchMLSData = base44.functions.fetchMLSData;
+export const fetchMLSData = async () => {
+  throw new Error("fetchMLSData not implemented yet.");
+};
 
-export const getMapboxToken = base44.functions.getMapboxToken;
+export const getMapboxToken = async () => {
+  throw new Error("getMapboxToken not implemented yet.");
+};
 
-export const geocodeAddress = base44.functions.geocodeAddress;
+export const geocodeAddress = async () => {
+  throw new Error("geocodeAddress not implemented yet.");
+};
 
-export const sendCommunication = base44.functions.sendCommunication;
+export const sendCommunication = async () => {
+  throw new Error("sendCommunication not implemented yet.");
+};
 
-export const handleGoogleOAuthCallback = base44.functions.handleGoogleOAuthCallback;
+export const handleGoogleOAuthCallback = async () => {
+  throw new Error("handleGoogleOAuthCallback not implemented yet.");
+};
 
-export const getGoogleAuthUrl = base44.functions.getGoogleAuthUrl;
+export const getGoogleAuthUrl = async () => {
+  throw new Error("getGoogleAuthUrl not implemented yet.");
+};
 
-export const refreshGoogleToken = base44.functions.refreshGoogleToken;
+export const refreshGoogleToken = async () => {
+  throw new Error("refreshGoogleToken not implemented yet.");
+};
 
-export const sendGmailEmail = base44.functions.sendGmailEmail;
+export const sendGmailEmail = async () => {
+  throw new Error("sendGmailEmail not implemented yet.");
+};
 
-export const handleGmailWebhook = base44.functions.handleGmailWebhook;
+export const handleGmailWebhook = async () => {
+  throw new Error("handleGmailWebhook not implemented yet.");
+};
 
-export const startGmailSync = base44.functions.startGmailSync;
+export const startGmailSync = async () => {
+  throw new Error("startGmailSync not implemented yet.");
+};
 
-export const stopGmailSync = base44.functions.stopGmailSync;
+export const stopGmailSync = async () => {
+  throw new Error("stopGmailSync not implemented yet.");
+};
 
-export const getGoogleCallbackUrl = base44.functions.getGoogleCallbackUrl;
-
+export const getGoogleCallbackUrl = async () => {
+  throw new Error("getGoogleCallbackUrl not implemented yet.");
+};
