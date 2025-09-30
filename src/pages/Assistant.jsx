@@ -8,7 +8,7 @@ import {
   Loader2, 
   Plus
 } from 'lucide-react';
-import { agentSDK } from '@/agents';
+// import { agentSDK } from '@/agents';  <-- removed
 import { User } from '@/api/entities';
 import MessageBubble from '@/components/chat/MessageBubble';
 
@@ -27,23 +27,6 @@ export default function Assistant() {
   }, []);
 
   useEffect(() => {
-    if (currentConversation) {
-      const unsubscribe = agentSDK.subscribeToConversation(currentConversation.id, (data) => {
-        setMessages(data.messages);
-        // Extract first user message for title
-        const firstUserMessage = data.messages.find(msg => msg.role === 'user');
-        if (firstUserMessage && !conversationTitles[currentConversation.id]) {
-          setConversationTitles(prev => ({
-            ...prev,
-            [currentConversation.id]: firstUserMessage.content.substring(0, 60) + (firstUserMessage.content.length > 60 ? '...' : '')
-          }));
-        }
-      });
-      return () => unsubscribe();
-    }
-  }, [currentConversation, conversationTitles]);
-
-  useEffect(() => {
     scrollToBottom();
   }, [messages]);
 
@@ -51,57 +34,12 @@ export default function Assistant() {
     try {
       const currentUser = await User.me();
       setUser(currentUser);
-      
-      const conversationList = await agentSDK.listConversations({
-        agent_name: "realEstateAssistant"
-      });
 
-      // Filter conversations and load titles
-      const conversationsWithUserMessages = [];
-      const titles = {};
-
-      for (const conversation of conversationList) {
-        try {
-          const fullConversation = await agentSDK.getConversation(conversation.id);
-          const firstUserMessage = fullConversation.messages?.find(msg => msg.role === 'user');
-          
-          // Only include conversations that have at least one user message
-          if (firstUserMessage) {
-            conversationsWithUserMessages.push(conversation);
-            titles[conversation.id] = firstUserMessage.content.substring(0, 60) + (firstUserMessage.content.length > 60 ? '...' : '');
-          }
-        } catch (error) {
-          console.error(`Error loading conversation ${conversation.id}:`, error);
-        }
-      }
-
-      setConversations(conversationsWithUserMessages);
-      setConversationTitles(titles);
+      // Placeholder: conversations disabled until agentSDK is available
+      setConversations([]);
     } catch (error) {
       console.error('Error loading initial data:', error);
     }
-  };
-  
-  const refreshConversations = async () => {
-    const conversationList = await agentSDK.listConversations({
-      agent_name: "realEstateAssistant"
-    });
-
-    // Filter conversations to only show those with user messages
-    const conversationsWithUserMessages = [];
-    for (const conversation of conversationList) {
-      try {
-        const fullConversation = await agentSDK.getConversation(conversation.id);
-        const hasUserMessage = fullConversation.messages?.some(msg => msg.role === 'user');
-        if (hasUserMessage) {
-          conversationsWithUserMessages.push(conversation);
-        }
-      } catch (error) {
-        console.error(`Error checking conversation ${conversation.id}:`, error);
-      }
-    }
-
-    setConversations(conversationsWithUserMessages);
   };
 
   const scrollToBottom = () => {
@@ -109,37 +47,15 @@ export default function Assistant() {
   };
 
   const createNewConversation = async () => {
-    try {
-      const conversation = await agentSDK.createConversation({
-        agent_name: "realEstateAssistant",
-        metadata: {
-          name: "New Chat",
-          description: "Real Estate Assistant Chat"
-        }
-      });
-      setCurrentConversation(conversation);
-      setMessages([]);
-      // Don't add to conversations list yet - wait until first user message
-    } catch (error) {
-      console.error('Error creating conversation:', error);
-    }
+    // Disabled for now
+    setCurrentConversation({ id: Date.now(), metadata: { name: "New Chat" } });
+    setMessages([]);
   };
 
   const selectConversation = async (conversation) => {
     setCurrentConversation(conversation);
-    const fullConversation = await agentSDK.getConversation(conversation.id);
-    setMessages(fullConversation.messages || []);
-    
-    // Extract and store first user message if not already stored
-    if (!conversationTitles[conversation.id]) {
-      const firstUserMessage = fullConversation.messages?.find(msg => msg.role === 'user');
-      if (firstUserMessage) {
-        setConversationTitles(prev => ({
-          ...prev,
-          [conversation.id]: firstUserMessage.content.substring(0, 60) + (firstUserMessage.content.length > 60 ? '...' : '')
-        }));
-      }
-    }
+    // No SDK: leave messages empty
+    setMessages([]);
   };
 
   const sendMessage = async () => {
@@ -147,21 +63,13 @@ export default function Assistant() {
     
     setLoading(true);
     try {
-      await agentSDK.addMessage(currentConversation, {
+      // No SDK: just simulate local message
+      const newMessage = {
+        id: Date.now(),
         role: "user",
         content: inputMessage
-      });
-      
-      // If this is the first message in the conversation, use it as title and refresh conversations
-      if (messages.length === 0 && !conversationTitles[currentConversation.id]) {
-        setConversationTitles(prev => ({
-          ...prev,
-          [currentConversation.id]: inputMessage.substring(0, 60) + (inputMessage.length > 60 ? '...' : '')
-        }));
-        // Refresh conversations to include this new conversation with a user message
-        await refreshConversations();
-      }
-      
+      };
+      setMessages(prev => [...prev, newMessage]);
       setInputMessage('');
     } catch (error) {
       console.error('Error sending message:', error);
@@ -177,19 +85,9 @@ export default function Assistant() {
     }
   };
 
-  // Generate conversation title from first user question
+  // Generate conversation title
   const getConversationTitle = (conversation) => {
-    // Use stored first user message if available
-    if (conversationTitles[conversation.id]) {
-      return conversationTitles[conversation.id];
-    }
-    
-    // Fallback to metadata name or default
-    if (conversation.metadata?.name && conversation.metadata.name !== 'New Chat') {
-      return conversation.metadata.name;
-    }
-    
-    return "New Chat";
+    return conversation.metadata?.name || "New Chat";
   };
 
   return (
@@ -219,7 +117,7 @@ export default function Assistant() {
                   {getConversationTitle(conversation)}
                 </div>
                 <div className="text-xs text-gray-500 mt-1">
-                  {new Date(conversation.updated_date).toLocaleDateString()}
+                  {new Date().toLocaleDateString()}
                 </div>
               </div>
             ))}
@@ -248,16 +146,8 @@ export default function Assistant() {
                   </div>
                   <h4 className="font-semibold text-gray-900 mb-2">Hi there! 👋</h4>
                   <p className="text-gray-600 text-sm max-w-xs mx-auto leading-relaxed">
-                    I'm your real estate assistant. Ask me about your deals, contacts, or important dates!
+                    I'm your real estate assistant. Chat functionality is coming soon.
                   </p>
-                  <div className="mt-4 space-y-2">
-                    <div className="bg-white rounded-xl p-3 text-xs text-gray-500 border max-w-xs mx-auto">
-                      "What's due this week on Main Street?"
-                    </div>
-                    <div className="bg-white rounded-xl p-3 text-xs text-gray-500 border max-w-xs mx-auto">
-                      "Who is the buyer's agent for the Oak property?"
-                    </div>
-                  </div>
                 </div>
               ) : (
                 messages.map((message) => (
@@ -300,7 +190,7 @@ export default function Assistant() {
                 Welcome to Your AI Assistant
               </h3>
               <p className="text-gray-500 mb-6 max-w-md">
-                Select a conversation or start a new one to ask questions about your transactions, contacts, and important dates.
+                Select a conversation or start a new one to chat (feature coming soon).
               </p>
               <Button onClick={createNewConversation} className="clay-accent-mint">
                 <MessageCircle className="w-4 h-4 mr-2" />
