@@ -30,11 +30,6 @@ const navigationItems = [
     icon: Users
   },
   {
-    title: "Assistant",
-    url: createPageUrl("Assistant"),
-    icon: MessageCircle // New Assistant item
-  },
-  {
     title: "Calendar",
     url: createPageUrl("Calendar"),
     icon: Calendar
