@@ -1,52 +1,63 @@
 // src/api/functions.js
+console.warn("⚠️ Base44 functions have been stripped. Using stubs.");
 
-// Placeholder file after removing Base44 functions.
-// Later we’ll hook these up to Supabase or other APIs.
-
+// Replace each function with a no-op or mock return
 export const fetchMLSData = async () => {
-  throw new Error("fetchMLSData not implemented yet.");
+  console.log("Stub: fetchMLSData called");
+  return [];
 };
 
 export const getMapboxToken = async () => {
-  throw new Error("getMapboxToken not implemented yet.");
+  console.log("Stub: getMapboxToken called");
+  return "stub-mapbox-token";
 };
 
-export const geocodeAddress = async () => {
-  throw new Error("geocodeAddress not implemented yet.");
+export const geocodeAddress = async (address) => {
+  console.log("Stub: geocodeAddress called with", address);
+  return { lat: 0, lng: 0 };
 };
 
-export const sendCommunication = async () => {
-  throw new Error("sendCommunication not implemented yet.");
+export const sendCommunication = async (msg) => {
+  console.log("Stub: sendCommunication called with", msg);
+  return { success: true };
 };
 
 export const handleGoogleOAuthCallback = async () => {
-  throw new Error("handleGoogleOAuthCallback not implemented yet.");
+  console.log("Stub: handleGoogleOAuthCallback called");
+  return {};
 };
 
 export const getGoogleAuthUrl = async () => {
-  throw new Error("getGoogleAuthUrl not implemented yet.");
+  console.log("Stub: getGoogleAuthUrl called");
+  return "https://example.com/oauth";
 };
 
 export const refreshGoogleToken = async () => {
-  throw new Error("refreshGoogleToken not implemented yet.");
+  console.log("Stub: refreshGoogleToken called");
+  return {};
 };
 
 export const sendGmailEmail = async () => {
-  throw new Error("sendGmailEmail not implemented yet.");
+  console.log("Stub: sendGmailEmail called");
+  return { success: true };
 };
 
 export const handleGmailWebhook = async () => {
-  throw new Error("handleGmailWebhook not implemented yet.");
+  console.log("Stub: handleGmailWebhook called");
+  return {};
 };
 
 export const startGmailSync = async () => {
-  throw new Error("startGmailSync not implemented yet.");
+  console.log("Stub: startGmailSync called");
+  return {};
 };
 
 export const stopGmailSync = async () => {
-  throw new Error("stopGmailSync not implemented yet.");
+  console.log("Stub: stopGmailSync called");
+  return {};
 };
 
 export const getGoogleCallbackUrl = async () => {
-  throw new Error("getGoogleCallbackUrl not implemented yet.");
+  console.log("Stub: getGoogleCallbackUrl called");
+  return "https://example.com/callback";
 };

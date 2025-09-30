@@ -1,8 +1,7 @@
 // src/api/entities.js
+console.warn("⚠️ Base44 entities have been stripped. Using stubs.");
 
-// Placeholder file after removing Base44 entities.
-// We'll later replace this with Supabase models.
-
+// Stub exports so the rest of the app won’t break
 export const Transaction = {};
 export const Client = {};
 export const DisclosureItem = {};
@@ -13,15 +12,7 @@ export const TaskTemplate = {};
 export const EmailHistory = {};
 export const EmailTemplate = {};
 
-// Auth placeholder
+// auth stub
 export const User = {
-  login: async () => {
-    throw new Error("User.login not implemented yet.");
-  },
-  logout: async () => {
-    throw new Error("User.logout not implemented yet.");
-  },
-  me: async () => {
-    throw new Error("User.me not implemented yet.");
-  }
+  me: async () => ({ id: "stub-user", name: "Test User" }),
 };
