@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Transaction } from '@/api/entities';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { Loader2 } from 'lucide-react';
 import { differenceInDays, parseISO } from 'date-fns';
+import { supabase } from '@/lib/supabaseClient';
 
 function TransactionCard({ transaction }) {
   const daysToCOE = transaction.close_of_escrow_date
@@ -36,10 +36,14 @@ export default function ActiveTransactionsSlider() {
   useEffect(() => {
     const fetchTransactions = async () => {
       try {
-        const allTransactions = await Transaction.list();
-        const activeStatuses = ["active_contingent", "active_noncontingent", "listed", "seller_in_possession"];
-        const activeTransactions = allTransactions.filter(t => activeStatuses.includes(t.status));
-        setTransactions(activeTransactions);
+        const { data, error } = await supabase
+          .from('transactions')
+          .select('*')
+          .in('status', ["active_contingent", "active_noncontingent", "listed", "seller_in_possession"])
+          .order('updated_at', { ascending: false });
+
+        if (error) throw error;
+        setTransactions(data || []);
       } catch (error) {
         console.error("Failed to fetch active transactions:", error);
       } finally {

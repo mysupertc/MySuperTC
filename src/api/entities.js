@@ -1,119 +1,86 @@
 // src/api/entities.js
-import { supabase } from "@/lib/supabaseClient";
+import { supabase } from "@/lib/supabaseClient"
 
-/**
- * Helpers
- */
-function safeReturn({ data, error }) {
-  if (error) throw error;
-  return data || [];
+// Small helper: throw on error, return data on success
+function ok({ data, error }) {
+  if (error) throw error
+  return data
 }
 
-// ---- Transactions ----
-// Minimal Supabase-backed functions to replace Base44 calls
-export const Transaction = {
-  /**
-   * Usage replacement for previous Base44:
-   *   Transaction.list({ status: 'active', limit: 10 })
-   */
-  async list(opts = {}) {
-    let query = supabase.from("transactions").select("*");
-
-    if (opts.status) query = query.eq("status", opts.status);
-    if (opts.orderBy) {
-      query = query.order(opts.orderBy, { ascending: !!opts.ascending });
-    } else {
-      // sensible default if your table has this column
-      try {
-        query = query.order("updated_at", { ascending: false });
-      } catch (e) {
-        // ignore if column doesn't exist yet
+// Generic table wrapper so we don’t repeat ourselves
+function table(name) {
+  return {
+    list: async (opts = {}) => {
+      let q = supabase.from(name).select("*")
+      if (opts.orderBy) {
+        q = q.order(opts.orderBy, { ascending: !!opts.ascending })
       }
-    }
-    if (opts.limit) query = query.limit(opts.limit);
+      return ok(await q)
+    },
 
-    try {
-      const { data, error } = await query;
-      return safeReturn({ data, error });
-    } catch (e) {
-      // If table doesn't exist yet, don't crash UI
-      console.warn("Transaction.list fallback:", e?.message);
-      return [];
-    }
-  },
+    filter: async (filters = {}, opts = {}) => {
+      let q = supabase.from(name).select("*")
 
-  /**
-   * Usage replacement for previous Base44:
-   *   Transaction.filter({ status: 'active', address: '%main%' }, { limit: 20, orderBy: 'close_date' })
-   * Strings containing % will be treated as ilike
-   */
-  async filter(criteria = {}, { limit, orderBy, ascending = false } = {}) {
-    let query = supabase.from("transactions").select("*");
-
-    Object.entries(criteria).forEach(([col, val]) => {
-      if (val === undefined || val === null) return;
-      if (typeof val === "string" && val.includes("%")) {
-        query = query.ilike(col, val);
-      } else {
-        query = query.eq(col, val);
+      // Support .eq for scalars and .in for arrays
+      for (const [key, value] of Object.entries(filters)) {
+        if (value === undefined || value === null) continue
+        if (Array.isArray(value)) q = q.in(key, value)
+        else q = q.eq(key, value)
       }
-    });
 
-    if (orderBy) query = query.order(orderBy, { ascending });
-    if (limit) query = query.limit(limit);
+      if (opts.orderBy) {
+        q = q.order(opts.orderBy, { ascending: !!opts.ascending })
+      }
+      if (opts.limit) q = q.limit(opts.limit)
+      return ok(await q)
+    },
 
-    try {
-      const { data, error } = await query;
-      return safeReturn({ data, error });
-    } catch (e) {
-      console.warn("Transaction.filter fallback:", e?.message);
-      return [];
-    }
-  },
-};
+    get: async (id) => ok(await supabase.from(name).select("*").eq("id", id).single()),
+    create: async (payload) => ok(await supabase.from(name).insert(payload).select("*").single()),
+    update: async (id, patch) =>
+      ok(await supabase.from(name).update(patch).eq("id", id).select("*").single()),
+    remove: async (id) => ok(await supabase.from(name).delete().eq("id", id)),
+  }
+}
 
-// ---- Clients / Contacts / etc ----
-// Export minimal stubs so existing imports don’t explode.
-// We’ll wire these up to Supabase later as needed.
-export const Client = {
-  async list() { return []; },
-  async filter() { return []; },
-};
-export const Contact = {
-  async list() { return []; },
-  async filter() { return []; },
-};
-export const DisclosureItem = { async list() { return []; } };
-export const TaskItem       = { async list() { return []; } };
-export const DisclosureTemplate = { async list() { return []; } };
-export const TaskTemplate       = { async list() { return []; } };
-export const EmailHistory       = { async list() { return []; } };
-export const EmailTemplate      = { async list() { return []; } };
+/** Tables (names must match your Supabase SQL) */
+export const Transaction = table("transactions")
+export const Client = table("clients")
+export const TaskItem = table("taskitems")
+export const DisclosureItem = table("disclosureitems")
+export const Contact = table("contacts")
+export const DisclosureTemplate = table("disclosuretemplates")
+export const TaskTemplate = table("tasktemplates")
+export const EmailHistory = table("emailhistory")
+export const EmailTemplate = table("emailtemplates")
 
-// ---- User (temporary) ----
-// Keeps your UI running while we set up Supabase Auth.
-// `me()` returns a “guest” so your nav/pages can render.
+/** Auth-ish helpers that your UI was using */
 export const User = {
-  async me() {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return { id: "guest", full_name: "Guest", theme: "light" };
-      return {
-        id: user.id,
-        full_name: user.email || "User",
-        theme: "light",
-        profile_picture_url: null,
-      };
-    } catch {
-      return { id: "guest", full_name: "Guest", theme: "light" };
-    }
+  // Returns combined auth user + profile row (if it exists)
+  me: async () => {
+    const { data: { user }, error } = await supabase.auth.getUser()
+    if (error) throw error
+    if (!user) throw new Error("Not logged in")
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", user.id)
+      .single()
+    return { id: user.id, email: user.email, ...(profile || {}) }
   },
-  login() {
-    // You can swap this later for Supabase OAuth / Magic Link
-    window.location.href = "/login";
+
+  // Google sign-in
+  login: async () => {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo: window.location.origin },
+    })
+    if (error) throw error
   },
-  async logout() {
-    try { await supabase.auth.signOut(); } catch {}
-    window.location.reload();
+
+  logout: async () => {
+    await supabase.auth.signOut()
+    // Optionally force refresh:
+    window.location.reload()
   },
-};
+}

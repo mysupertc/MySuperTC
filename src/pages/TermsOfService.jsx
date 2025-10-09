@@ -206,53 +206,87 @@ export default function TermsOfService() {
           <hr className="my-8" />
 
           <section>
-            <h2>15. Fees; Billing; Changes</h2>
+            <h2>15. Developer Access & Data Handling Policy</h2>
+            <p><strong>15.1 Purpose.</strong> This section describes how My Super TC’s technical administrators may access system data solely for the purposes of maintenance, troubleshooting, onboarding, and compliance support. My Super TC respects the privacy and ownership of all brokerage and client data. Access is strictly limited to legitimate operational needs under authorized circumstances.</p>
+
+            <p><strong>15.2 Legal Authority & Consent.</strong> By using the Service, you grant My Super TC limited permission to access data for: (a) technical troubleshooting, (b) feature debugging, (c) data migration or restoration, and (d) compliance or security audits. Such access is non-exclusive, revocable, and limited to technical purposes. My Super TC does not claim ownership over brokerage or client data; all uploaded information remains the property of the originating brokerage or agent.</p>
+
+            <p><strong>15.3 Scope of Access.</strong> Developer access is governed by strict controls:</p>
+            <ul className="list-disc list-outside pl-6">
+              <li><em>System Administrator Access:</em> backend access for bug resolution or server maintenance; time-limited and fully logged.</li>
+              <li><em>Support Engineer Impersonation:</em> temporary read-only sessions used to reproduce a reported issue; auto-expiring and auditable.</li>
+              <li><em>Data Migration Access:</em> limited to projects where brokerage requests import or archival of data; client sign-off required after completion.</li>
+              <li><em>Compliance Review Access:</em> view of metadata and system logs only, authorized by a compliance officer.</li>
+            </ul>
+
+            <p><strong>15.4 Security Controls.</strong> My Super TC implements industry-standard safeguards, including:</p>
+            <ul className="list-disc list-outside pl-6">
+              <li>Encryption in transit (TLS 1.2+) and at rest (AES-256).</li>
+              <li>Role-based access controls (RBAC) and multi-factor authentication for all admin accounts.</li>
+              <li>Quarterly reviews of all admin permissions and immediate revocation of unnecessary access.</li>
+              <li>Data masking for sensitive fields such as financial or personal identifiers.</li>
+              <li>Comprehensive audit logs retained for at least 12 months.</li>
+            </ul>
+
+            <p><strong>15.5 Data Retention & Ownership.</strong> My Super TC does not retain copies of customer data outside the production environment. Transaction data is stored securely within the Service or linked cloud accounts. Upon termination, brokerages may export their data within 30 days before permanent deletion.</p>
+
+            <p><strong>15.6 Incident Response.</strong> In the event of unauthorized access or potential exposure, My Super TC will notify the affected brokerage within 72 hours, revoke credentials, and provide a root-cause report within 10 business days.</p>
+
+            <p><strong>15.7 Compliance Framework.</strong> Operations align with the CCPA/CPRA, GLBA, RESPA, and SOC 2 Type I principles. My Super TC acts as a “Service Provider” under applicable privacy laws and maintains audit-ready documentation.</p>
+
+            <p><strong>15.8 Client Rights & Transparency.</strong> Brokerages may request a record of developer access sessions related to their account or revoke technical access with written notice. My Super TC will maintain transparency regarding third-party infrastructure providers (e.g., Supabase, Vercel, Google Cloud) used to host or process system data.</p>
+
+            <p><strong>15.9 Internal Governance.</strong> Developer access requires approval by the CTO or Compliance Officer. All personnel must sign confidentiality agreements and comply with this policy. Quarterly audits ensure adherence and continuous improvement.</p>
+          </section>
+
+          <section>
+            <h2>16. Fees; Billing; Changes</h2>
             
-            <p><strong>15.1 Fees & Taxes.</strong> You agree to pay all fees stated at purchase and any applicable taxes, duties, and government charges (excluding our net income taxes). If required by law to withhold taxes, you will provide valid documentation so we can reclaim or reduce such amounts.</p>
+            <p><strong>16.1 Fees & Taxes.</strong> You agree to pay all fees stated at purchase and any applicable taxes, duties, and government charges (excluding our net income taxes). If required by law to withhold taxes, you will provide valid documentation so we can reclaim or reduce such amounts.</p>
 
-            <p><strong>15.2 Billing & Auto-Renewal.</strong> Subscriptions renew automatically for the then-current term unless canceled before renewal. You authorize us (and our payment processors) to charge your payment method for recurring fees and any overages or add-ons you elect.</p>
+            <p><strong>16.2 Billing & Auto-Renewal.</strong> Subscriptions renew automatically for the then-current term unless canceled before renewal. You authorize us (and our payment processors) to charge your payment method for recurring fees and any overages or add-ons you elect.</p>
 
-            <p><strong>15.3 Pricing Changes.</strong> We may modify pricing upon reasonable prior notice, effective on the next renewal term, unless otherwise agreed.</p>
+            <p><strong>16.3 Pricing Changes.</strong> We may modify pricing upon reasonable prior notice, effective on the next renewal term, unless otherwise agreed.</p>
 
-            <p><strong>15.4 No Refunds.</strong> Except where required by law or expressly stated otherwise, all fees are non-refundable.</p>
+            <p><strong>16.4 No Refunds.</strong> Except where required by law or expressly stated otherwise, all fees are non-refundable.</p>
           </section>
 
           <hr className="my-8" />
 
           <section>
-            <h2>16. Late Payments; Suspension; Collections</h2>
+            <h2>17. Late Payments; Suspension; Collections</h2>
             
-            <p><strong>16.1 Late Payments & Interest.</strong> Amounts not received when due may accrue interest at the lesser of 1.5% per month (18% per annum) or the maximum amount allowed by law, from the due date until paid. We may also charge reasonable late or re-billing fees for failed or reversed payments.</p>
+            <p><strong>17.1 Late Payments & Interest.</strong> Amounts not received when due may accrue interest at the lesser of 1.5% per month (18% per annum) or the maximum amount allowed by law, from the due date until paid. We may also charge reasonable late or re-billing fees for failed or reversed payments.</p>
 
-            <p><strong>16.2 Dunning; Suspension.</strong> If a charge is declined or an invoice remains unpaid, we may attempt to re-process and will send notices to your billing contact. We may suspend or restrict access (in whole or in part) for non-payment after reasonable notice. Suspension does not relieve you of the obligation to pay accrued fees.</p>
+            <p><strong>17.2 Dunning; Suspension.</strong> If a charge is declined or an invoice remains unpaid, we may attempt to re-process and will send notices to your billing contact. We may suspend or restrict access (in whole or in part) for non-payment after reasonable notice. Suspension does not relieve you of the obligation to pay accrued fees.</p>
 
-            <p><strong>16.3 Collections; Assignment of Receivables.</strong> If your account remains past due, you agree that we may (a) refer the account to a third-party collection agency, (b) engage counsel to collect, and/or (c) sell, assign, or otherwise transfer our right to receive payment (in whole or in part) to a third party, to the fullest extent permitted by applicable law. We may provide such third parties with necessary account, contact, and billing information strictly for collection and enforcement purposes. We will provide notice of assignment to your last known billing email where required by law.</p>
+            <p><strong>17.3 Collections; Assignment of Receivables.</strong> If your account remains past due, you agree that we may (a) refer the account to a third-party collection agency, (b) engage counsel to collect, and/or (c) sell, assign, or otherwise transfer our right to receive payment (in whole or in part) to a third party, to the fullest extent permitted by applicable law. We may provide such third parties with necessary account, contact, and billing information strictly for collection and enforcement purposes. We will provide notice of assignment to your last known billing email where required by law.</p>
 
-            <p><strong>16.4 Costs of Collection; Attorneys' Fees.</strong> You agree to reimburse all reasonable costs of collection, including agency fees, court costs, and reasonable attorneys' fees, incurred due to your non-payment, to the extent permitted by law.</p>
+            <p><strong>17.4 Costs of Collection; Attorneys' Fees.</strong> You agree to reimburse all reasonable costs of collection, including agency fees, court costs, and reasonable attorneys' fees, incurred due to your non-payment, to the extent permitted by law.</p>
 
-            <p><strong>16.5 Chargebacks & Disputes.</strong> Initiating a chargeback without first providing us a reasonable opportunity to resolve a billing dispute constitutes a material breach. We may assess administrative fees and suspend the account pending resolution.</p>
+            <p><strong>17.5 Chargebacks & Disputes.</strong> Initiating a chargeback without first providing us a reasonable opportunity to resolve a billing dispute constitutes a material breach. We may assess administrative fees and suspend the account pending resolution.</p>
 
-            <p><strong>16.6 Data Access During Delinquency.</strong> During suspension for non-payment, we may disable certain features, downloads, exports, or API functionality until the account is brought current, except as otherwise required by law. Upon cure, we will restore access within a commercially reasonable time.</p>
+            <p><strong>17.6 Data Access During Delinquency.</strong> During suspension for non-payment, we may disable certain features, downloads, exports, or API functionality until the account is brought current, except as otherwise required by law. Upon cure, we will restore access within a commercially reasonable time.</p>
 
-            <p><strong>16.7 Termination for Non-Payment.</strong> If amounts remain unpaid after suspension and notice, we may terminate the account. Following termination, we may delete Customer Data in accordance with Section 14.9.</p>
+            <p><strong>17.7 Termination for Non-Payment.</strong> If amounts remain unpaid after suspension and notice, we may terminate the account. Following termination, we may delete Customer Data in accordance with Section 14.9.</p>
           </section>
 
           <hr className="my-8" />
 
           <section>
-            <h2>17. Additional Terms; Priority</h2>
+            <h2>18. Additional Terms; Priority</h2>
             
-            <p><strong>17.1 Conflicts.</strong> If there is a conflict between this Addendum (Sections 14–17) and other Terms, these Sections control with respect to data protection, billing, delinquency, and collections.</p>
+            <p><strong>18.1 Conflicts.</strong> If there is a conflict between this Addendum (Sections 14–17) and other Terms, these Sections control with respect to data protection, billing, delinquency, and collections.</p>
 
-            <p><strong>17.2 Severability.</strong> If any provision of Sections 14–17 is held unenforceable, it will be modified to the minimum extent necessary to be enforceable, and the remainder will remain in effect.</p>
+            <p><strong>18.2 Severability.</strong> If any provision of Sections 14–18 is held unenforceable, it will be modified to the minimum extent necessary to be enforceable, and the remainder will remain in effect.</p>
 
-            <p><strong>17.3 Reservation of Rights.</strong> We reserve all rights not expressly granted herein.</p>
+            <p><strong>18.3 Reservation of Rights.</strong> We reserve all rights not expressly granted herein.</p>
           </section>
 
           <hr className="my-8" />
           
           <section>
-            <h2>18. Contact Information</h2>
+            <h2>19. Contact Information</h2>
             <p>
               For questions regarding these Terms, please contact us at:<br />
               📧 support@mysupertc.com
