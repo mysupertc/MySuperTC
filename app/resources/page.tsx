@@ -1,0 +1,100 @@
+import Link from "next/link"
+import { PublicFooter } from "@/components/public-footer"
+
+export default function Resources() {
+  const resources = [
+    {
+      title: "California Seller Disclosures & Required Home Sale Booklets (2025)",
+      description:
+        "Comprehensive guide to California's required seller disclosures, safety booklets, and AB-38 wildfire compliance forms.",
+      icon: "📄",
+      link: "/resources/california-disclosures",
+      category: "Legal & Compliance",
+    },
+    {
+      title: "California Pre-Sale Home Inspection & Report Requirements by City",
+      description:
+        "Learn which California cities require pre-sale property inspections, reports, and compliance certificates.",
+      icon: "🗺️",
+      link: "#",
+      category: "City-Specific Requirements",
+    },
+    {
+      title: "California Point-of-Sale Retrofit Inspections | LA Retrofit Guide",
+      description: "Learn California point-of-sale retrofit inspection requirements for Los Angeles & beyond.",
+      icon: "🏠",
+      link: "#",
+      category: "Retrofit & Compliance",
+    },
+  ]
+
+  return (
+    <div className="flex min-h-screen flex-col bg-white">
+      <div className="flex-1">
+        {/* Header */}
+        <div className="text-center py-20 md:py-28 px-6 bg-gray-50/70">
+          <h1 className="text-4xl md:text-6xl font-bold tracking-tighter text-gray-900 mb-4">Resource Hub</h1>
+          <p className="text-lg md:text-xl text-gray-600 max-w-3xl mx-auto">
+            Essential guides, forms, and compliance information for California real estate professionals.
+          </p>
+        </div>
+
+        {/* Resources Grid */}
+        <div className="max-w-7xl mx-auto px-6 py-16">
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {resources.map((resource, index) => (
+              <Link href={resource.link} key={index} className="block group">
+                <div className="border border-gray-200 rounded-2xl p-8 h-full transition-all duration-300 group-hover:border-blue-600 group-hover:shadow-lg">
+                  <div className="text-4xl mb-5">{resource.icon}</div>
+                  <p className="text-sm text-blue-600 font-medium mb-2">{resource.category}</p>
+                  <h2 className="text-xl font-bold text-gray-900 mb-3">{resource.title}</h2>
+                  <p className="text-gray-600 mb-6">{resource.description}</p>
+                  <span className="font-semibold text-blue-600 flex items-center">View Resource →</span>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+
+        {/* Coming Soon Section */}
+        <div className="bg-gray-50/70 py-20 md:py-28">
+          <div className="max-w-7xl mx-auto px-6 text-center">
+            <h2 className="text-3xl md:text-4xl font-bold tracking-tighter text-gray-900 mb-4">
+              More Resources Coming Soon
+            </h2>
+            <p className="text-lg text-gray-600 mb-12">
+              We&apos;re continuously adding new resources to help you excel.
+            </p>
+            <div className="grid md:grid-cols-3 gap-8 text-left">
+              {[
+                {
+                  icon: "🏠",
+                  title: "Property Management Guides",
+                  description: "Comprehensive resources for property managers and landlords.",
+                },
+                {
+                  icon: "⚖️",
+                  title: "Legal Forms Library",
+                  description: "Updated legal forms and contracts for real estate transactions.",
+                },
+                {
+                  icon: "🛡️",
+                  title: "Compliance Checklists",
+                  description: "Step-by-step compliance guides for various property types.",
+                },
+              ].map((item) => (
+                <div key={item.title} className="bg-white border border-gray-200 p-8 rounded-2xl">
+                  <div className="text-4xl mb-5">{item.icon}</div>
+                  <h3 className="font-bold text-lg mb-2">{item.title}</h3>
+                  <p className="text-gray-600 text-sm">{item.description}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <PublicFooter />
+    </div>
+  )
+}
