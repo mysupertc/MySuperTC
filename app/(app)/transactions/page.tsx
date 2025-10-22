@@ -20,7 +20,7 @@ export default async function TransactionsPage() {
   const { data: transactions } = await supabase
     .from("transactions")
     .select("*")
-    .eq("user_id", user.id)
+    .eq("profile_id", user.id)
     .order("created_at", { ascending: false })
 
   // Group by status
@@ -34,10 +34,10 @@ export default async function TransactionsPage() {
         <CardHeader>
           <div className="flex items-start justify-between">
             <div className="flex-1">
-              <CardTitle className="text-lg mb-2">{transaction.address}</CardTitle>
+              <CardTitle className="text-lg mb-2">{transaction.property_address}</CardTitle>
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <MapPin className="h-4 w-4" />
-                <span className="capitalize">{transaction.type}</span>
+                <span className="capitalize">{transaction.agent_side}</span>
               </div>
             </div>
             <Badge variant="secondary" className="capitalize">
@@ -46,10 +46,10 @@ export default async function TransactionsPage() {
           </div>
         </CardHeader>
         <CardContent className="space-y-3">
-          {transaction.price && (
+          {transaction.sales_price && (
             <div className="flex items-center gap-2">
               <DollarSign className="h-4 w-4 text-muted-foreground" />
-              <span className="font-semibold">${Number(transaction.price).toLocaleString()}</span>
+              <span className="font-semibold">${Number(transaction.sales_price).toLocaleString()}</span>
             </div>
           )}
           {transaction.close_date && (
@@ -58,10 +58,12 @@ export default async function TransactionsPage() {
               <span>Close: {new Date(transaction.close_date).toLocaleDateString()}</span>
             </div>
           )}
-          {transaction.commission && (
+          {(transaction.commission_listing || transaction.commission_buyer) && (
             <div className="text-sm">
               <span className="text-muted-foreground">Commission: </span>
-              <span className="font-medium">${Number(transaction.commission).toLocaleString()}</span>
+              <span className="font-medium">
+                ${Number((transaction.commission_listing || 0) + (transaction.commission_buyer || 0)).toLocaleString()}
+              </span>
             </div>
           )}
         </CardContent>

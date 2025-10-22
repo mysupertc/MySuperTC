@@ -97,17 +97,16 @@ export function createClient() {
 
         console.log("[v0] Redirecting to:", authUrl)
 
+        // This prevents the browser from keeping the current page in history
         try {
-          // Use a small timeout to ensure logs are written before redirect
-          setTimeout(() => {
-            window.location.replace(authUrl)
-          }, 100)
-
-          return { data: { url: authUrl }, error: null }
-        } catch (error) {
-          console.error("[v0] OAuth redirect failed:", error)
+          window.location.replace(authUrl)
+        } catch (e) {
+          console.error("[v0] Redirect failed:", e)
           return { data: { url: null }, error: { message: "Redirect failed" } }
         }
+
+        // Return a promise that never resolves since we're redirecting away
+        return new Promise(() => {})
       },
       signOut: async () => {
         const token = typeof window !== "undefined" ? localStorage.getItem("supabase.auth.token") : null

@@ -22,8 +22,8 @@ export default async function CalendarPage() {
 
   const { data: events } = await supabase
     .from("calendar_events")
-    .select("*, transactions(address)")
-    .eq("user_id", user.id)
+    .select("*, transactions(property_address)")
+    .eq("profile_id", user.id)
     .gte("start_time", startOfMonth.toISOString())
     .lte("start_time", endOfMonth.toISOString())
     .order("start_time", { ascending: true })
@@ -155,7 +155,7 @@ export default async function CalendarPage() {
                     </div>
                     {event.transactions && (
                       <Badge variant="secondary" className="mt-2">
-                        {event.transactions.address}
+                        {event.transactions.property_address}
                       </Badge>
                     )}
                   </div>

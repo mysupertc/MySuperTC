@@ -18,7 +18,7 @@ export default async function PipelinePage() {
   const { data: transactions } = await supabase
     .from("transactions")
     .select("*")
-    .eq("user_id", user.id)
+    .eq("profile_id", user.id)
     .order("created_at", { ascending: false })
 
   // Group transactions by status
@@ -58,17 +58,17 @@ export default async function PipelinePage() {
                   <Card className="clay-element hover:shadow-lg transition-all cursor-pointer">
                     <CardHeader className="p-4">
                       <div className={`h-1 w-full rounded-full ${stage.color} mb-3`} />
-                      <CardTitle className="text-sm font-medium line-clamp-2">{transaction.address}</CardTitle>
+                      <CardTitle className="text-sm font-medium line-clamp-2">{transaction.property_address}</CardTitle>
                     </CardHeader>
                     <CardContent className="p-4 pt-0 space-y-2">
                       <div className="flex items-center gap-2 text-xs text-muted-foreground">
                         <MapPin className="h-3 w-3" />
-                        <span className="capitalize">{transaction.type}</span>
+                        <span className="capitalize">{transaction.agent_side}</span>
                       </div>
-                      {transaction.price && (
+                      {transaction.sales_price && (
                         <div className="flex items-center gap-2 text-sm font-semibold">
                           <DollarSign className="h-4 w-4" />
-                          <span>${Number(transaction.price).toLocaleString()}</span>
+                          <span>${Number(transaction.sales_price).toLocaleString()}</span>
                         </div>
                       )}
                       {transaction.close_date && (

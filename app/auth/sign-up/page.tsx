@@ -47,44 +47,36 @@ export default function SignUpPage() {
       if (error) throw error
 
       if (data.session) {
+        console.log("[v0] User signed up with immediate session")
         document.cookie = `sb-access-token=${data.session.access_token}; path=/; max-age=3600; SameSite=Lax`
         document.cookie = `sb-refresh-token=${data.session.refresh_token}; path=/; max-age=${60 * 60 * 24 * 7}; SameSite=Lax`
         router.push("/dashboard")
       } else {
-        router.push("/auth/sign-up-success")
+        console.log("[v0] Email confirmation required")
+        // Show message about email confirmation
+        setError(
+          "Account created! Please check your email to confirm your account. If you don't receive an email, you may need to configure SMTP in your Supabase dashboard (Authentication > Email Templates).",
+        )
+        setIsLoading(false)
       }
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : "An error occurred")
-    } finally {
       setIsLoading(false)
     }
   }
 
-  const handleGoogleSignUp = async () => {
+  const handleGoogleSignUp = () => {
     console.log("[v0] Google sign up button clicked")
     const supabase = createClient()
     setIsLoading(true)
     setError(null)
 
-    try {
-      console.log("[v0] Calling signInWithOAuth...")
-      const result = await supabase.auth.signInWithOAuth({
-        provider: "google",
-      })
-      console.log("[v0] OAuth result:", result)
+    // This allows the redirect to happen immediately
+    supabase.auth.signInWithOAuth({
+      provider: "google",
+    })
 
-      if (result.error) {
-        console.error("[v0] OAuth error:", result.error)
-        throw result.error
-      }
-
-      // The redirect should happen automatically
-      console.log("[v0] OAuth redirect should happen now")
-    } catch (error: unknown) {
-      console.error("[v0] Caught error:", error)
-      setError(error instanceof Error ? error.message : "An error occurred with Google sign in")
-      setIsLoading(false)
-    }
+    // Don't set loading to false - we're redirecting away
   }
 
   return (

@@ -40,7 +40,7 @@ export function AddClientDialog() {
     if (!user) return
 
     const { error } = await supabase.from("clients").insert({
-      user_id: user.id,
+      profile_id: user.id,
       name: formData.get("name") as string,
       email: formData.get("email") as string,
       phone: formData.get("phone") as string,
