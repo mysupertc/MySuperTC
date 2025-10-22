@@ -3,6 +3,9 @@ import { NextResponse } from "next/server"
 export async function GET(request: Request) {
   const requestUrl = new URL(request.url)
 
+  console.log("[v0] OAuth callback received")
+  console.log("[v0] Query params:", Object.fromEntries(requestUrl.searchParams))
+
   // Check for access_token in hash (OAuth flow) or query params
   const access_token = requestUrl.searchParams.get("access_token")
   const refresh_token = requestUrl.searchParams.get("refresh_token")
@@ -17,6 +20,7 @@ export async function GET(request: Request) {
   }
 
   if (access_token) {
+    console.log("[v0] Access token received, setting cookies and redirecting to dashboard")
     // Create response with redirect
     const response = NextResponse.redirect(new URL("/dashboard", request.url))
 
@@ -39,5 +43,6 @@ export async function GET(request: Request) {
   }
 
   // If no tokens, redirect to login
+  console.log("[v0] No tokens found in callback, redirecting to login")
   return NextResponse.redirect(new URL("/auth/login", request.url))
 }

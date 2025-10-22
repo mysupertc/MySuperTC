@@ -9,6 +9,7 @@ export function createClient() {
   return {
     auth: {
       signInWithPassword: async ({ email, password }: { email: string; password: string }) => {
+        console.log("[v0] Attempting sign in with password")
         const response = await fetch(`${supabaseUrl}/auth/v1/token?grant_type=password`, {
           method: "POST",
           headers: {
@@ -21,9 +22,11 @@ export function createClient() {
         const data = await response.json()
 
         if (!response.ok) {
+          console.log("[v0] Sign in failed:", data)
           return { data: { user: null, session: null }, error: data }
         }
 
+        console.log("[v0] Sign in successful")
         // Store session in localStorage
         if (typeof window !== "undefined" && data.access_token) {
           localStorage.setItem("supabase.auth.token", data.access_token)
@@ -44,11 +47,14 @@ export function createClient() {
         password: string
         options?: { emailRedirectTo?: string }
       }) => {
+        console.log("[v0] Attempting sign up")
         const body: any = { email, password }
 
-        // Add redirect URL if provided
+        // Supabase expects redirect URL in options.emailRedirectTo
         if (options?.emailRedirectTo) {
-          body.data = { redirect_to: options.emailRedirectTo }
+          body.options = {
+            emailRedirectTo: options.emailRedirectTo,
+          }
         }
 
         const response = await fetch(`${supabaseUrl}/auth/v1/signup`, {
@@ -63,9 +69,11 @@ export function createClient() {
         const data = await response.json()
 
         if (!response.ok) {
+          console.log("[v0] Sign up failed:", data)
           return { data: { user: null, session: null }, error: data }
         }
 
+        console.log("[v0] Sign up successful, confirmation required:", !data.access_token)
         // Store session if auto-confirmed
         if (typeof window !== "undefined" && data.access_token) {
           localStorage.setItem("supabase.auth.token", data.access_token)
@@ -82,13 +90,24 @@ export function createClient() {
           return { data: { url: null }, error: { message: "Cannot redirect on server" } }
         }
 
-        const redirectTo = `${window.location.origin}/auth/callback`
-        const authUrl = `${supabaseUrl}/auth/v1/authorize?provider=${provider}&redirect_to=${encodeURIComponent(redirectTo)}`
+        console.log("[v0] Initiating OAuth with provider:", provider)
 
-        // Redirect to OAuth provider
-        window.location.href = authUrl
+        const redirectUrl = `${window.location.origin}/auth/callback`
+        const authUrl = `${supabaseUrl}/auth/v1/authorize?provider=${provider}&redirect_to=${encodeURIComponent(redirectUrl)}`
 
-        return { data: { url: authUrl }, error: null }
+        console.log("[v0] Redirecting to:", authUrl)
+
+        try {
+          // Use a small timeout to ensure logs are written before redirect
+          setTimeout(() => {
+            window.location.replace(authUrl)
+          }, 100)
+
+          return { data: { url: authUrl }, error: null }
+        } catch (error) {
+          console.error("[v0] OAuth redirect failed:", error)
+          return { data: { url: null }, error: { message: "Redirect failed" } }
+        }
       },
       signOut: async () => {
         const token = typeof window !== "undefined" ? localStorage.getItem("supabase.auth.token") : null
@@ -122,8 +141,8 @@ export function createClient() {
 
         const response = await fetch(`${supabaseUrl}/auth/v1/user`, {
           headers: {
-            Authorization: `Bearer ${token}`,
             apikey: supabaseKey,
+            ...(token && { Authorization: `Bearer ${token}` }),
           },
         })
 

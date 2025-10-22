@@ -34,9 +34,8 @@ export default function SignUpPage() {
     }
 
     try {
-      const redirectUrl =
-        process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL ||
-        (typeof window !== "undefined" ? `${window.location.origin}/auth/callback` : "")
+      const redirectUrl = `${window.location.origin}/auth/callback`
+      console.log("[v0] Sign up redirect URL:", redirectUrl)
 
       const { data, error } = await supabase.auth.signUp({
         email,
@@ -62,17 +61,28 @@ export default function SignUpPage() {
   }
 
   const handleGoogleSignUp = async () => {
+    console.log("[v0] Google sign up button clicked")
     const supabase = createClient()
     setIsLoading(true)
     setError(null)
 
     try {
-      const { error } = await supabase.auth.signInWithOAuth({
+      console.log("[v0] Calling signInWithOAuth...")
+      const result = await supabase.auth.signInWithOAuth({
         provider: "google",
       })
-      if (error) throw error
+      console.log("[v0] OAuth result:", result)
+
+      if (result.error) {
+        console.error("[v0] OAuth error:", result.error)
+        throw result.error
+      }
+
+      // The redirect should happen automatically
+      console.log("[v0] OAuth redirect should happen now")
     } catch (error: unknown) {
-      setError(error instanceof Error ? error.message : "An error occurred")
+      console.error("[v0] Caught error:", error)
+      setError(error instanceof Error ? error.message : "An error occurred with Google sign in")
       setIsLoading(false)
     }
   }
@@ -139,7 +149,7 @@ export default function SignUpPage() {
                   <Button
                     type="button"
                     variant="outline"
-                    className="w-full bg-transparent"
+                    className="w-full bg-white hover:bg-gray-50"
                     onClick={handleGoogleSignUp}
                     disabled={isLoading}
                   >
@@ -161,7 +171,7 @@ export default function SignUpPage() {
                         fill="#EA4335"
                       />
                     </svg>
-                    Sign up with Google
+                    {isLoading ? "Connecting..." : "Sign up with Google"}
                   </Button>
                 </div>
                 <div className="mt-4 text-center text-sm">
