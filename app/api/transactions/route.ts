@@ -8,14 +8,9 @@ export async function POST(req: Request) {
     return NextResponse.json({ success: true, transaction: newTransaction });
   } catch (err: any) {
     console.error("Transaction creation failed:", err);
-    return NextResponse.json({ success: false, error: err.message }, { status: 500 });
-  }
-}
-
-    const newTransaction = await createTransactionInDB(body)
-    return NextResponse.json({ success: true, transaction: newTransaction })
-  } catch (err: any) {
-    console.error("Transaction creation failed:", err)
-    return NextResponse.json({ success: false, error: err.message || "Internal Server Error" }, { status: 500 })
+    return NextResponse.json(
+      { success: false, error: err.message || "Internal Server Error" },
+      { status: 500 }
+    );
   }
 }
