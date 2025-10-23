@@ -5,7 +5,7 @@ export async function createTransactionInDB(req: Request, data: any) {
   const cookieStore = cookies();
   const supabase = createRouteHandlerClient({ cookies: () => cookieStore });
 
-  // Get current user
+  // Get the currently authenticated user
   const {
     data: { user },
     error: userError,
@@ -16,9 +16,10 @@ export async function createTransactionInDB(req: Request, data: any) {
     throw new Error("User not authenticated");
   }
 
+  // Insert the new transaction linked to this user's profile
   const { data: inserted, error } = await supabase
     .from("transactions")
-    .insert([{ ...data, user_id: user.id }])
+    .insert([{ ...data, profile_id: user.id }])
     .select()
     .single();
 
