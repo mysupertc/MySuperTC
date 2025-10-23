@@ -1,91 +1,13 @@
 "use client"
 
-import type React from "react"
-
-import { useState, useEffect, useRef } from "react"
+import { useState } from "react"
+import { useRouter } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { ArrowLeft, Search, Loader2, Plus, Building } from "lucide-react"
+import { Loader2, Search, Plus, Building, ArrowLeft } from "lucide-react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
-
-const formatCurrency = (value: string | number | null | undefined): string => {
-  if (value === "" || value === null || value === undefined) return ""
-  const numericValue = Number.parseFloat(String(value).replace(/[^\d.-]/g, ""))
-  if (isNaN(numericValue)) return ""
-  return `$${numericValue.toLocaleString("en-US", { maximumFractionDigits: 2 })}`
-}
-
-const parseCurrency = (value: string | number | null | undefined): string => {
-  if (value === "" || value === null || value === undefined) return ""
-  return String(value).replace(/[^\d.-]/g, "")
-}
-
-const CurrencyInput = ({ value, onChange, ...props }: any) => {
-  const [inputValue, setInputValue] = useState(() => formatCurrency(value))
-  const debounceTimeout = useRef<NodeJS.Timeout | null>(null)
-
-  useEffect(() => {
-    const numericProp = parseCurrency(value)
-    const numericState = parseCurrency(inputValue)
-    if (numericProp !== numericState) {
-      setInputValue(formatCurrency(value))
-    }
-  }, [value, inputValue])
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const rawValue = e.target.value
-    setInputValue(rawValue)
-
-    if (debounceTimeout.current) {
-      clearTimeout(debounceTimeout.current)
-    }
-
-    debounceTimeout.current = setTimeout(() => {
-      const numericValue = parseCurrency(rawValue)
-      onChange(numericValue)
-    }, 400)
-  }
-
-  const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
-    if (debounceTimeout.current) {
-      clearTimeout(debounceTimeout.current)
-    }
-    const numericValue = parseCurrency(e.target.value)
-    setInputValue(formatCurrency(numericValue))
-    onChange(numericValue)
-  }
-
-  return <Input {...props} value={inputValue} onChange={handleChange} onBlur={handleBlur} />
-}
-
-const DebouncedInput = ({ value, onChange, type = "text", ...props }: any) => {
-  const [localValue, setLocalValue] = useState(value)
-  const debounceTimeout = useRef<NodeJS.Timeout | null>(null)
-
-  useEffect(() => {
-    if (value !== localValue) {
-      setLocalValue(value)
-    }
-  }, [value, localValue])
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newValue = e.target.value
-    setLocalValue(newValue)
-
-    if (debounceTimeout.current) {
-      clearTimeout(debounceTimeout.current)
-    }
-
-    debounceTimeout.current = setTimeout(() => {
-      onChange(newValue)
-    }, 400)
-  }
-
-  return <Input {...props} type={type} value={localValue || ""} onChange={handleChange} />
-}
 
 export default function NewTransactionPage() {
   const router = useRouter()
@@ -95,15 +17,14 @@ export default function NewTransactionPage() {
   const [error, setError] = useState("")
   const [property, setProperty] = useState<any | null>(null)
 
+  // 🔍 Search MLS by API
   const handleSearchMLS = async () => {
     if (!mlsNumber.trim()) return
     setLoading(true)
     setError("")
-
     try {
       const res = await fetch(`/api/mls?mlsNumber=${encodeURIComponent(mlsNumber.trim())}`)
       const result = await res.json()
-
       if (!result.success) throw new Error(result.error || "No property found")
       setProperty(result.data)
       setMode("confirm")
@@ -114,6 +35,7 @@ export default function NewTransactionPage() {
     }
   }
 
+  // 🏡 Manual entry
   const handleOffMarket = () => {
     setProperty({
       StreetAddress: "",
@@ -126,6 +48,7 @@ export default function NewTransactionPage() {
     setMode("confirm")
   }
 
+  // 💾 Save to Supabase via API
   const handleCreateTransaction = async () => {
     if (!property) return
     setLoading(true)
@@ -148,24 +71,25 @@ export default function NewTransactionPage() {
       })
 
       const result = await res.json()
-      if (!result.success) throw new Error(result.error || "Failed to create transaction")
+      if (!res.ok || !result.success) throw new Error(result.error || "Failed to create transaction")
 
+      // ✅ redirect immediately after success
       router.push(`/transactions/${result.transaction.id}`)
     } catch (err: any) {
+      console.error("Create transaction error:", err)
       setError(err.message)
     } finally {
       setLoading(false)
     }
   }
 
+  // ---------------- UI STATES ----------------
   if (mode === "search") {
     return (
       <div className="p-6 max-w-4xl mx-auto">
         <div className="flex items-center gap-4 mb-8">
           <Link href="/transactions">
-            <Button variant="outline" size="icon">
-              <ArrowLeft className="w-4 h-4" />
-            </Button>
+            <Button variant="outline" size="icon"><ArrowLeft className="w-4 h-4" /></Button>
           </Link>
           <div>
             <h1 className="text-3xl font-bold">New Transaction</h1>
@@ -175,12 +99,7 @@ export default function NewTransactionPage() {
 
         <div className="grid md:grid-cols-2 gap-6">
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-3">
-                <Search className="w-6 h-6 text-indigo-600" />
-                MLS Property Search
-              </CardTitle>
-            </CardHeader>
+            <CardHeader><CardTitle className="flex items-center gap-3"><Search />MLS Property Search</CardTitle></CardHeader>
             <CardContent className="space-y-4">
               <Label>MLS Number</Label>
               <Input
@@ -197,18 +116,10 @@ export default function NewTransactionPage() {
           </Card>
 
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-3">
-                <Building className="w-6 h-6 text-purple-600" />
-                Off-Market Property
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <p className="text-muted-foreground">Add property details manually for off-market or pocket listings.</p>
-              <Button onClick={handleOffMarket} className="w-full">
-                <Plus className="w-4 h-4 mr-2" />
-                Add Off-Market Property
-              </Button>
+            <CardHeader><CardTitle className="flex items-center gap-3"><Building />Off-Market Property</CardTitle></CardHeader>
+            <CardContent>
+              <p className="text-muted-foreground mb-3">Add property manually for off-market listings.</p>
+              <Button onClick={handleOffMarket} className="w-full"><Plus className="w-4 h-4 mr-2" />Add Off-Market Property</Button>
             </CardContent>
           </Card>
         </div>
@@ -221,43 +132,35 @@ export default function NewTransactionPage() {
   if (mode === "confirm" && property) {
     return (
       <div className="p-6 max-w-3xl mx-auto space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold mb-2">Confirm Property Details</h1>
-          <p className="text-muted-foreground mb-6">Review before creating your transaction.</p>
-
-          <Card>
-            <CardContent className="space-y-2 py-6">
+        <h1 className="text-2xl font-bold">Confirm Property Details</h1>
+        <Card>
+          <CardContent className="space-y-4 py-6">
+            <Label>Street Address</Label>
+            <Input
+              value={property.StreetAddress}
+              onChange={(e) => setProperty({ ...property, StreetAddress: e.target.value })}
+            />
+            <div className="grid grid-cols-2 gap-3">
               <div>
-                <Label>Street Address</Label>
+                <Label>City</Label>
                 <Input
-                  value={property.StreetAddress || ""}
-                  onChange={(e) => setProperty({ ...property, StreetAddress: e.target.value })}
+                  value={property.City}
+                  onChange={(e) => setProperty({ ...property, City: e.target.value })}
                 />
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <Label>City</Label>
-                  <Input
-                    value={property.City || ""}
-                    onChange={(e) => setProperty({ ...property, City: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <Label>Zip</Label>
-                  <Input
-                    value={property.Zip || ""}
-                    onChange={(e) => setProperty({ ...property, Zip: e.target.value })}
-                  />
-                </div>
+              <div>
+                <Label>Zip</Label>
+                <Input
+                  value={property.Zip}
+                  onChange={(e) => setProperty({ ...property, Zip: e.target.value })}
+                />
               </div>
-            </CardContent>
-          </Card>
-        </div>
+            </div>
+          </CardContent>
+        </Card>
 
         <div className="flex justify-end gap-3">
-          <Button variant="outline" onClick={() => setMode("search")}>
-            Back
-          </Button>
+          <Button variant="outline" onClick={() => setMode("search")}>Back</Button>
           <Button onClick={handleCreateTransaction} disabled={loading}>
             {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Plus className="w-4 h-4 mr-2" />}
             {loading ? "Creating..." : "Create Transaction"}
