@@ -9,7 +9,7 @@ export async function POST(req: Request) {
     if (!body.property_address || !body.agent_side) {
       return NextResponse.json(
         { success: false, error: "Missing required fields: property_address or agent_side" },
-        { status: 400 }
+        { status: 400 },
       )
     }
 
@@ -17,9 +17,6 @@ export async function POST(req: Request) {
     return NextResponse.json({ success: true, transaction: newTransaction })
   } catch (err: any) {
     console.error("Transaction creation failed:", err)
-    return NextResponse.json(
-      { success: false, error: err.message || "Internal Server Error" },
-      { status: 500 }
-    )
+    return NextResponse.json({ success: false, error: err.message || "Internal Server Error" }, { status: 500 })
   }
 }
