@@ -4,12 +4,21 @@ import { createTransactionInDB } from "@/lib/server/transactions";
 export async function POST(req: Request) {
   try {
     const body = await req.json();
+
+    // Pass both the request and body so we can read auth cookies
     const newTransaction = await createTransactionInDB(req, body);
-    return NextResponse.json({ success: true, transaction: newTransaction });
+
+    return NextResponse.json({
+      success: true,
+      transaction: newTransaction,
+    });
   } catch (err: any) {
     console.error("Transaction creation failed:", err);
     return NextResponse.json(
-      { success: false, error: err.message || "Internal Server Error" },
+      {
+        success: false,
+        error: err.message || "Internal Server Error",
+      },
       { status: 500 }
     );
   }
