@@ -43,14 +43,6 @@ export async function geocodeAddress({ address }: { address: string }) {
   }
 }
 
-export async function getMapboxToken() {
-  return {
-    data: {
-      token: process.env.NEXT_PUBLIC_MAPBOX_TOKEN || null,
-    },
-  }
-}
-
 export async function getGoogleAuthUrl() {
   try {
     const response = await fetch("/api/google/auth-url", {
@@ -141,3 +133,5 @@ export async function fetchMLSData({ mlsNumber }: { mlsNumber: string }) {
     }
   }
 }
+
+// Mapbox public tokens (pk.*) are designed for client-side use and should be accessed directly

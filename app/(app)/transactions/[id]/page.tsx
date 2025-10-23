@@ -6,6 +6,7 @@ import { Transaction, Contact, DisclosureItem, TaskItem } from "@/lib/api/entiti
 import { ArrowLeft, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
+import { getMapboxToken } from "@/app/actions/mapbox"
 
 import ActiveTransactionsSlider from "@/components/transactions/ActiveTransactionsSlider"
 import TransactionDetailHeader from "@/components/transactions/TransactionDetailHeader"
@@ -18,7 +19,6 @@ import TransactionTimeline from "@/components/transactions/TransactionTimeline"
 import TransactionCalendarGrid from "@/components/transactions/TransactionCalendarGrid"
 import EmailMailbox from "@/components/transactions/EmailMailbox"
 import FloatingEmailWidget from "@/components/email/FloatingEmailWidget"
-import { getMapboxToken } from "@/lib/api/functions"
 
 const isDisclosureCompleted = (item: any) => {
   return (
@@ -73,7 +73,7 @@ export default function TransactionDetailPage() {
     if (!id) return
     setLoading(true)
     try {
-      const [transactionData, contactsData, disclosuresData, tasksData, tokenResponse] = await Promise.all([
+      const [transactionData, contactsData, disclosuresData, tasksData, token] = await Promise.all([
         Transaction.get(id),
         Contact.filter({ transaction_id: id }),
         DisclosureItem.filter({ transaction_id: id }, "order_index"),
@@ -84,9 +84,7 @@ export default function TransactionDetailPage() {
       setContacts(contactsData)
       setDisclosureItems(disclosuresData)
       setTaskItems(tasksData)
-      if (tokenResponse && tokenResponse.data && tokenResponse.data.token) {
-        setMapboxToken(tokenResponse.data.token)
-      }
+      setMapboxToken(token)
     } catch (error) {
       console.error("Error loading transaction details:", error)
     } finally {
