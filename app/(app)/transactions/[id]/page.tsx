@@ -159,17 +159,6 @@ export default function TransactionDetailPage() {
     }
   }, [transactionId, loadAllData])
 
-  if (transactionId === "new") {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="text-center">
-          <Loader2 className="w-12 h-12 animate-spin text-indigo-600 mx-auto mb-4" />
-          <p className="text-muted-foreground">Redirecting to new transaction page...</p>
-        </div>
-      </div>
-    )
-  }
-
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen">
