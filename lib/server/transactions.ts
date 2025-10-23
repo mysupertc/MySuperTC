@@ -1,10 +1,11 @@
-import { cookies } from "next/headers";
 import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
+import { cookies } from "next/headers";
 
-export async function createTransactionInDB(req: Request, data: any) {
-  const cookieStore = cookies();
+export async function createTransactionInDB(cookieStore: ReturnType<typeof cookies>, data: any) {
+  // ✅ Initialize Supabase with cookies
   const supabase = createRouteHandlerClient({ cookies: () => cookieStore });
 
+  // ✅ Get current authenticated user
   const {
     data: { user },
     error: userError,
@@ -14,6 +15,7 @@ export async function createTransactionInDB(req: Request, data: any) {
     throw new Error("User not authenticated");
   }
 
+  // ✅ Insert new transaction and link to the user's profile
   const { data: inserted, error } = await supabase
     .from("transactions")
     .insert([{ ...data, profile_id: user.id }])
@@ -21,5 +23,6 @@ export async function createTransactionInDB(req: Request, data: any) {
     .single();
 
   if (error) throw new Error(error.message);
+
   return inserted;
 }
