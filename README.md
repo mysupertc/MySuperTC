@@ -12,7 +12,7 @@ Add these environment variables to your project:
 - `SUPABASE_SERVICE_ROLE_KEY` - Your Supabase service role key (server-side only)
 
 ### Optional
-- `NEXT_PUBLIC_MAPBOX_TOKEN` - Mapbox public API token for map functionality
+- `MAPBOX_TOKEN` - Mapbox public API token for map functionality (server-side only, accessed via server action)
 - `NEXT_PUBLIC_SITE_URL` - Your site URL for OAuth redirects
 - `NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL` - Development OAuth redirect URL
 
