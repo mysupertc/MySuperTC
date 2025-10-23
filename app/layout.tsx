@@ -1,7 +1,11 @@
 import type React from "react"
 import type { Metadata } from "next"
-import { Inter } from "next/font/google"
+
 import "./globals.css"
+import { Inter, Archivo as V0_Font_Archivo } from 'next/font/google'
+
+// Initialize fonts
+const _archivo = V0_Font_Archivo({ subsets: ['latin'], weight: ["100","200","300","400","500","600","700","800","900"] })
 
 const inter = Inter({
   subsets: ["latin"],

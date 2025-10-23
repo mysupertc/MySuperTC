@@ -65,18 +65,24 @@ export default function SignUpPage() {
     }
   }
 
-  const handleGoogleSignUp = () => {
-    console.log("[v0] Google sign up button clicked")
+  const handleGoogleSignUp = async () => {
     const supabase = createClient()
     setIsLoading(true)
     setError(null)
 
-    // This allows the redirect to happen immediately
-    supabase.auth.signInWithOAuth({
-      provider: "google",
-    })
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+        },
+      })
 
-    // Don't set loading to false - we're redirecting away
+      if (error) throw error
+    } catch (error: unknown) {
+      setError(error instanceof Error ? error.message : "An error occurred")
+      setIsLoading(false)
+    }
   }
 
   return (

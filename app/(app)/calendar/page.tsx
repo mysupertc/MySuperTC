@@ -1,109 +1,358 @@
-import { createClient } from "@/lib/supabase/server"
-import { redirect } from "next/navigation"
+"use client"
+
+import { useState, useEffect, useCallback, useMemo } from "react"
+import { createClient } from "@/lib/supabase/client"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { CalendarIcon, Clock, MapPin, Plus } from "lucide-react"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
+import { ChevronLeft, ChevronRight, Download, Clock, Plus } from "lucide-react"
+import {
+  format,
+  startOfMonth,
+  endOfMonth,
+  eachDayOfInterval,
+  isSameDay,
+  addMonths,
+  subMonths,
+  startOfWeek,
+  endOfWeek,
+  parseISO,
+  isPast,
+  differenceInDays,
+} from "date-fns"
 
-export default async function CalendarPage() {
-  const supabase = await createClient()
+const DATE_FIELD_LABELS: Record<string, string> = {
+  original_contract_date: "Original Contract Date",
+  offer_acceptance_date: "Offer Acceptance Date",
+  emd_due_date: "Earnest Money Deposit Due",
+  investigation_contingency_date: "Investigation Contingency",
+  loan_contingency_date: "Loan Contingency",
+  appraisal_contingency_date: "Appraisal Contingency",
+  seller_disclosures_date: "Seller Disclosures",
+  disclosures_due_back_date: "Disclosures Due Back",
+  close_of_escrow_date: "Close of Escrow",
+  final_walkthrough_date: "Final Walkthrough",
+  possession_date: "Date of Possession",
+}
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  if (!user) {
-    redirect("/auth/login")
+export default function CalendarPage() {
+  const [transactions, setTransactions] = useState<any[]>([])
+  const [taskDates, setTaskDates] = useState<any[]>([])
+  const [selectedDates, setSelectedDates] = useState<any[]>([])
+  const [currentDate, setCurrentDate] = useState(new Date())
+  const [dayViewOpen, setDayViewOpen] = useState(false)
+  const [dayViewDate, setDayViewDate] = useState<Date | null>(null)
+  const [dayViewData, setDayViewData] = useState<{ dates: any[]; tasks: any[] }>({ dates: [], tasks: [] })
+  const [editOpen, setEditOpen] = useState(false)
+  const [editingItem, setEditingItem] = useState<any>(null)
+  const [addReminderOpen, setAddReminderOpen] = useState(false)
+  const [newReminder, setNewReminder] = useState({
+    task_name: "",
+    due_date: "",
+    notes: "",
+    transaction_id: "",
+  })
+  const [statusFilter, setStatusFilter] = useState("all")
+  const [showMoreUpcoming, setShowMoreUpcoming] = useState(false)
+
+  const fetchTransactions = useCallback(async () => {
+    const supabase = createClient()
+    const { data, error } = await supabase.from("transactions").select("*")
+    if (!error) {
+      setTransactions(data || [])
+      extractImportantDates(data || [])
+    }
+  }, [])
+
+  const extractImportantDates = useCallback((data: any[]) => {
+    const dates: any[] = []
+    data.forEach((t) => {
+      Object.keys(DATE_FIELD_LABELS).forEach((key) => {
+        const dateValue = t[key]
+        if (dateValue) {
+          dates.push({
+            id: `${t.id}-${key}`,
+            date: parseISO(dateValue),
+            label: DATE_FIELD_LABELS[key],
+            transaction: t,
+            dateKey: key,
+            status: t[`${key}_status`] || "in_progress",
+            notes: t[`${key}_notes`] || "",
+            type: "transaction",
+          })
+        }
+      })
+    })
+    dates.sort((a, b) => a.date.getTime() - b.date.getTime())
+    setSelectedDates(dates)
+  }, [])
+
+  const fetchTasks = useCallback(async () => {
+    const supabase = createClient()
+    const { data, error } = await supabase.from("task_items").select("*")
+    if (!error) {
+      const tasks = (data || []).map((task) => ({
+        id: `task-${task.id}`,
+        date: task.due_date ? parseISO(task.due_date) : null,
+        label: task.task_name,
+        task,
+        status: task.completed ? "completed" : "pending",
+        notes: task.notes || "",
+        type: "task",
+        completed: task.completed,
+      }))
+      setTaskDates(tasks)
+    }
+  }, [])
+
+  useEffect(() => {
+    fetchTransactions()
+    fetchTasks()
+  }, [fetchTransactions, fetchTasks])
+
+  const getCalendarDays = () => {
+    const start = startOfWeek(startOfMonth(currentDate))
+    const end = endOfWeek(endOfMonth(currentDate))
+    return eachDayOfInterval({ start, end })
   }
 
-  // Get current month events
-  const now = new Date()
-  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
-  const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0)
-
-  const { data: events } = await supabase
-    .from("calendar_events")
-    .select("*, transactions(property_address)")
-    .eq("profile_id", user.id)
-    .gte("start_time", startOfMonth.toISOString())
-    .lte("start_time", endOfMonth.toISOString())
-    .order("start_time", { ascending: true })
-
-  // Group events by date
-  const eventsByDate = events?.reduce((acc: Record<string, any[]>, event) => {
-    const date = new Date(event.start_time).toDateString()
-    if (!acc[date]) acc[date] = []
-    acc[date].push(event)
-    return acc
-  }, {})
-
-  // Generate calendar grid
-  const firstDay = startOfMonth.getDay()
-  const daysInMonth = endOfMonth.getDate()
-  const calendarDays = []
-
-  // Add empty cells for days before month starts
-  for (let i = 0; i < firstDay; i++) {
-    calendarDays.push(null)
+  const getDatesForDay = (day: Date) => {
+    const tDates = selectedDates.filter((d) => isSameDay(d.date, day))
+    const tasks = taskDates.filter((t) => t.date && isSameDay(t.date, day))
+    return { transactionDates: tDates, taskDates: tasks }
   }
 
-  // Add days of month
-  for (let day = 1; day <= daysInMonth; day++) {
-    calendarDays.push(day)
+  const openDayView = (day: Date) => {
+    const { transactionDates, taskDates: dayTasks } = getDatesForDay(day)
+    if (transactionDates.length > 0 || dayTasks.length > 0) {
+      setDayViewData({ dates: transactionDates, tasks: dayTasks })
+      setDayViewDate(day)
+      setDayViewOpen(true)
+
+      if (transactionDates.length > 0) {
+        setNewReminder((prev) => ({
+          ...prev,
+          due_date: format(day, "yyyy-MM-dd"),
+          transaction_id: transactionDates[0].transaction.id,
+        }))
+      }
+    } else {
+      setNewReminder((prev) => ({ ...prev, due_date: format(day, "yyyy-MM-dd") }))
+      setAddReminderOpen(true)
+    }
   }
+
+  const humanizeStatus = (s: string) => (s ? s.replaceAll("_", " ").replace(/\b\w/g, (c) => c.toUpperCase()) : "")
+
+  const isOverdue = (item: any) => {
+    if (!item.date) return false
+    const exempt = ["extended", "negotiating", "waived", "completed"]
+    return isPast(item.date) && !exempt.includes(item.status)
+  }
+
+  const isDueSoon = (item: any) => {
+    if (!item.date) return false
+    const days = differenceInDays(item.date, new Date())
+    return days >= 0 && days <= 2 && !isOverdue(item) && item.status !== "completed"
+  }
+
+  const badgeTone = (item: any) => {
+    if (item.completed) return "bg-gray-100 text-gray-500"
+    if (isOverdue(item)) return "bg-red-100 text-red-700 border-l-4 border-red-500"
+    if (isDueSoon(item)) return "bg-yellow-100 text-yellow-700"
+    switch (item.status) {
+      case "completed":
+        return "bg-gray-200 text-gray-600"
+      case "in_progress":
+        return "bg-blue-100 text-blue-700"
+      case "pending":
+        return "bg-blue-100 text-blue-700"
+      case "extended":
+        return "bg-yellow-50 text-yellow-700"
+      case "negotiating":
+        return "bg-orange-100 text-orange-700"
+      case "waived":
+        return "bg-gray-100 text-gray-700"
+      default:
+        return "bg-gray-100 text-gray-700"
+    }
+  }
+
+  const allActiveItems = useMemo(
+    () => [...selectedDates, ...taskDates].filter((i) => i.status !== "completed"),
+    [selectedDates, taskDates],
+  )
+
+  const filteredItems = useMemo(() => {
+    if (statusFilter === "all") return allActiveItems
+    return allActiveItems.filter((i) => i.status === statusFilter)
+  }, [allActiveItems, statusFilter])
+
+  const upcomingItems = useMemo(
+    () => filteredItems.filter((i) => i.date).sort((a, b) => a.date.getTime() - b.date.getTime()),
+    [filteredItems],
+  )
+
+  const upcomingWindow = useMemo(() => {
+    if (showMoreUpcoming) {
+      return upcomingItems
+    }
+    return upcomingItems.slice(0, 5)
+  }, [upcomingItems, showMoreUpcoming])
+
+  const handleAddReminder = async () => {
+    if (!newReminder.task_name || !newReminder.due_date) return
+    const supabase = createClient()
+    const defaultTx = transactions.find((t) => !["closed", "cancelled"].includes(t.status))?.id
+    await supabase.from("task_items").insert([
+      {
+        task_name: newReminder.task_name,
+        due_date: newReminder.due_date,
+        notes: newReminder.notes || null,
+        transaction_id: newReminder.transaction_id || defaultTx,
+        section: "broker_disclosures",
+        completed: false,
+      },
+    ])
+    setAddReminderOpen(false)
+    setNewReminder({ task_name: "", due_date: "", notes: "", transaction_id: "" })
+    fetchTasks()
+  }
+
+  const openEditModal = (item: any) => {
+    let enrichedItem = { ...item }
+    if (item.type === "task" && item.task?.transaction_id) {
+      const tx = transactions.find((t) => t.id === item.task.transaction_id)
+      if (tx) {
+        enrichedItem = { ...item, transaction: tx }
+      }
+    }
+    setEditingItem(enrichedItem)
+    setEditOpen(true)
+  }
+
+  const handleSaveEdit = async (payload: any) => {
+    const supabase = createClient()
+    if (editingItem.type === "transaction") {
+      const update = {
+        [editingItem.dateKey]: payload.date || null,
+        [`${editingItem.dateKey}_status`]: payload.status || editingItem.status,
+        [`${editingItem.dateKey}_notes`]: payload.notes ?? editingItem.notes,
+      }
+      await supabase.from("transactions").update(update).eq("id", editingItem.transaction.id)
+      await fetchTransactions()
+    } else {
+      await supabase
+        .from("task_items")
+        .update({
+          due_date: payload.date || null,
+          notes: payload.notes ?? editingItem.notes,
+          completed: payload.status === "completed",
+        })
+        .eq("id", editingItem.task.id)
+      await fetchTasks()
+    }
+    setEditOpen(false)
+    setEditingItem(null)
+  }
+
+  const calendarDays = getCalendarDays()
+  const monthStart = startOfMonth(currentDate)
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="p-6 space-y-6">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Calendar</h1>
-          <p className="text-muted-foreground">{now.toLocaleDateString("en-US", { month: "long", year: "numeric" })}</p>
+          <h1 className="text-3xl font-bold">Calendar</h1>
+          <p className="text-muted-foreground mt-1">Important dates for all your transactions and tasks</p>
         </div>
-        <Button className="clay-accent-mint">
-          <Plus className="h-4 w-4 mr-2" />
-          Add Event
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="min-w-[200px]">
+              <SelectValue placeholder="Filter Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All</SelectItem>
+              <SelectItem value="in_progress">In Progress</SelectItem>
+              <SelectItem value="pending">Pending</SelectItem>
+              <SelectItem value="extended">Extended</SelectItem>
+              <SelectItem value="negotiating">Negotiating</SelectItem>
+              <SelectItem value="waived">Waived</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button onClick={() => setAddReminderOpen(true)} className="clay-element clay-accent-mint border-0">
+            <Plus className="w-4 h-4 mr-2" />
+            Add Reminder
+          </Button>
+          <Button onClick={() => console.log("Export")} className="clay-element clay-accent-blue border-0">
+            <Download className="w-4 h-4 mr-2" />
+            Export
+          </Button>
+        </div>
       </div>
 
       {/* Calendar Grid */}
-      <Card className="clay-element">
+      <Card className="clay-element border-0">
         <CardHeader>
-          <CardTitle>Monthly View</CardTitle>
+          <div className="flex justify-between items-center">
+            <CardTitle className="text-2xl">{format(currentDate, "MMMM yyyy")}</CardTitle>
+            <div className="flex gap-2">
+              <Button variant="outline" size="icon" onClick={() => setCurrentDate(subMonths(currentDate, 1))}>
+                <ChevronLeft className="w-4 h-4" />
+              </Button>
+              <Button variant="outline" size="icon" onClick={() => setCurrentDate(addMonths(currentDate, 1))}>
+                <ChevronRight className="w-4 h-4" />
+              </Button>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-7 gap-2">
+          <div className="grid grid-cols-7 gap-2 mb-4">
             {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
-              <div key={day} className="text-center font-semibold text-sm text-muted-foreground p-2">
+              <div key={day} className="p-3 text-center font-semibold text-gray-600 clay-element">
                 {day}
               </div>
             ))}
-
-            {calendarDays.map((day, index) => {
-              if (!day) {
-                return <div key={`empty-${index}`} className="aspect-square" />
-              }
-
-              const date = new Date(now.getFullYear(), now.getMonth(), day)
-              const dateString = date.toDateString()
-              const dayEvents = eventsByDate?.[dateString] || []
-              const isToday = dateString === new Date().toDateString()
+          </div>
+          <div className="grid grid-cols-7 gap-2">
+            {calendarDays.map((day) => {
+              const { transactionDates, taskDates: tasks } = getDatesForDay(day)
+              const items = [...transactionDates, ...tasks].sort((a, b) => a.date.getTime() - b.date.getTime())
+              const isCurrentMonth = day.getMonth() === monthStart.getMonth()
+              const isToday = isSameDay(day, new Date())
 
               return (
                 <div
-                  key={day}
-                  className={`aspect-square border rounded-lg p-2 ${
-                    isToday ? "border-primary bg-primary/5" : "border-border"
-                  } hover:bg-muted/50 transition-colors`}
+                  key={day.toISOString()}
+                  className={`min-h-24 p-2 clay-element cursor-pointer hover:shadow-lg transition-all ${
+                    !isCurrentMonth ? "opacity-30" : ""
+                  } ${isToday ? "clay-accent-blue" : ""}`}
+                  onClick={() => openDayView(day)}
                 >
-                  <div className="text-sm font-medium mb-1">{day}</div>
+                  <div className={`text-sm font-semibold mb-1 ${isToday ? "text-blue-700" : "text-gray-700"}`}>
+                    {format(day, "d")}
+                  </div>
                   <div className="space-y-1">
-                    {dayEvents.slice(0, 2).map((event) => (
-                      <div key={event.id} className="text-xs p-1 rounded clay-accent-mint text-white truncate">
-                        {event.title}
+                    {items.slice(0, 2).map((item) => (
+                      <div key={item.id} className="relative group">
+                        <Badge className={`clay-element border-0 text-xs p-1 block truncate ${badgeTone(item)}`}>
+                          {item.type === "task" ? "📋" : "🏠"} {item.label}
+                        </Badge>
+                        <div className="absolute z-50 hidden group-hover:block top-full left-1/2 -translate-x-1/2 mt-2 w-72 bg-white border border-gray-200 rounded-lg shadow-xl p-3">
+                          <div className="font-semibold text-gray-900 mb-1">{format(item.date, "MMMM d, yyyy")}</div>
+                          <div className="text-sm text-gray-700">{item.label}</div>
+                          {item.transaction?.property_address && (
+                            <div className="text-xs text-gray-500">{item.transaction.property_address}</div>
+                          )}
+                          {item.notes && <div className="text-xs text-gray-600 italic mt-1">{item.notes}</div>}
+                        </div>
                       </div>
                     ))}
-                    {dayEvents.length > 2 && (
-                      <div className="text-xs text-muted-foreground">+{dayEvents.length - 2} more</div>
-                    )}
                   </div>
                 </div>
               )
@@ -112,64 +361,297 @@ export default async function CalendarPage() {
         </CardContent>
       </Card>
 
-      {/* Upcoming Events List */}
-      <Card className="clay-element">
-        <CardHeader>
-          <CardTitle>Upcoming Events</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {events && events.length > 0 ? (
-              events.slice(0, 10).map((event) => (
+      {/* Upcoming Important Dates & Tasks */}
+      {upcomingItems.length > 0 && (
+        <Card className="clay-element border-0">
+          <CardHeader>
+            <CardTitle className="text-xl flex items-center gap-2">
+              <Clock className="w-5 h-5" />
+              Upcoming Important Dates & Tasks
+            </CardTitle>
+          </CardHeader>
+          <CardContent className={`${showMoreUpcoming ? "max-h-[550px] overflow-y-auto" : "max-h-none"}`}>
+            <div className="space-y-3">
+              {upcomingWindow.map((item) => (
                 <div
-                  key={event.id}
-                  className="flex items-start gap-4 p-4 rounded-lg hover:bg-muted/50 transition-colors"
+                  key={item.id}
+                  onClick={() => openEditModal(item)}
+                  className={`relative group clay-element p-4 flex justify-between items-center border hover:shadow cursor-pointer
+                    ${isOverdue(item) ? "border-l-4 border-red-500 bg-red-50" : ""}
+                    ${isDueSoon(item) ? "border-l-4 border-yellow-500 bg-yellow-50" : ""}
+                  `}
                 >
-                  <div className="flex-shrink-0">
-                    <div className="h-12 w-12 rounded-lg clay-accent-blue flex flex-col items-center justify-center text-white">
-                      <span className="text-xs font-medium">
-                        {new Date(event.start_time).toLocaleDateString("en-US", { month: "short" })}
-                      </span>
-                      <span className="text-lg font-bold">{new Date(event.start_time).getDate()}</span>
+                  <div className="flex items-center gap-4">
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-gray-900">{format(item.date, "d")}</div>
+                      <div className="text-xs text-gray-500 uppercase">{format(item.date, "MMM")}</div>
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-gray-900 flex items-center gap-2">
+                        {item.type === "task" ? "📋" : "🏠"} {item.label}
+                      </h3>
+                      <p className="text-gray-600">
+                        {item.transaction?.property_address ||
+                          (item.type === "task" && item.task?.transaction_id
+                            ? transactions.find((t) => t.id === item.task.transaction_id)?.property_address
+                            : "Task Item")}
+                      </p>
                     </div>
                   </div>
-                  <div className="flex-1">
-                    <h4 className="font-semibold mb-1">{event.title}</h4>
-                    {event.description && <p className="text-sm text-muted-foreground mb-2">{event.description}</p>}
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                      <div className="flex items-center gap-1">
-                        <Clock className="h-4 w-4" />
-                        <span>
-                          {new Date(event.start_time).toLocaleTimeString("en-US", {
-                            hour: "numeric",
-                            minute: "2-digit",
-                          })}
-                        </span>
-                      </div>
-                      {event.location && (
-                        <div className="flex items-center gap-1">
-                          <MapPin className="h-4 w-4" />
-                          <span>{event.location}</span>
-                        </div>
-                      )}
-                    </div>
-                    {event.transactions && (
-                      <Badge variant="secondary" className="mt-2">
-                        {event.transactions.property_address}
-                      </Badge>
+                  <Badge className={`clay-element border-0 ${badgeTone(item)}`}>
+                    {isOverdue(item) ? "Overdue" : humanizeStatus(item.status)}
+                  </Badge>
+                  <div className="absolute z-50 hidden group-hover:block top-full left-1/2 -translate-x-1/2 mt-2 w-80 bg-white border border-gray-200 rounded-lg shadow-xl p-4">
+                    <div className="font-semibold text-gray-900 mb-2">{format(item.date, "MMMM d, yyyy")}</div>
+                    <div className="text-sm text-gray-700">{item.label}</div>
+                    {item.transaction?.property_address && (
+                      <div className="text-xs text-gray-500">{item.transaction.property_address}</div>
                     )}
+                    {item.notes && <div className="text-xs text-gray-600 italic mt-2">{item.notes}</div>}
                   </div>
                 </div>
-              ))
-            ) : (
-              <div className="text-center py-8 text-muted-foreground">
-                <CalendarIcon className="h-16 w-16 mx-auto mb-4 opacity-50" />
-                <p>No upcoming events</p>
+              ))}
+            </div>
+            {upcomingItems.length > 5 && (
+              <div className="mt-3">
+                <Button
+                  onClick={() => setShowMoreUpcoming((p) => !p)}
+                  className="w-full clay-element"
+                  variant="outline"
+                >
+                  {showMoreUpcoming ? "Show Less" : "Show More"}
+                </Button>
               </div>
             )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Day View Dialog */}
+      <Dialog open={dayViewOpen} onOpenChange={setDayViewOpen}>
+        <DialogContent className="sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-2xl">
+              {dayViewDate ? format(dayViewDate, "MMMM d, yyyy") : "Day View"}
+            </DialogTitle>
+          </DialogHeader>
+          {dayViewData.dates.length > 0 && (
+            <div className="space-y-3 mb-6">
+              <h3 className="font-semibold text-gray-900">Transaction Dates</h3>
+              {dayViewData.dates.map((d) => (
+                <div
+                  key={d.id}
+                  onClick={() => openEditModal(d)}
+                  className={`clay-element p-4 flex justify-between items-center cursor-pointer transition hover:shadow-md hover:border-gray-300
+                    ${isOverdue(d) ? "border-l-4 border-red-500" : ""}
+                    ${isDueSoon(d) ? "border-l-4 border-yellow-500" : ""}
+                  `}
+                >
+                  <div>
+                    <p className="font-medium">{d.label}</p>
+                    <p className="text-sm text-gray-600">{d.transaction?.property_address || "Transaction"}</p>
+                  </div>
+                  <Badge className={`clay-element border-0 ${badgeTone(d)}`}>
+                    {isOverdue(d) ? "Overdue" : humanizeStatus(d.status)}
+                  </Badge>
+                </div>
+              ))}
+            </div>
+          )}
+          {dayViewData.tasks.length > 0 && (
+            <div className="space-y-3">
+              <h3 className="font-semibold text-gray-900">Reminders / Tasks</h3>
+              {dayViewData.tasks.map((t) => (
+                <div
+                  key={t.id}
+                  onClick={() => openEditModal(t)}
+                  className="clay-element p-3 flex justify-between items-center cursor-pointer hover:shadow"
+                >
+                  <div>
+                    <p className="font-medium">{t.label}</p>
+                    <p className="text-sm text-gray-600">
+                      {transactions.find((x) => x.id === t.task.transaction_id)?.property_address || "Task"}
+                    </p>
+                  </div>
+                  <Badge className={`clay-element border-0 ${badgeTone(t)}`}>
+                    {isOverdue(t) ? "Overdue" : humanizeStatus(t.status)}
+                  </Badge>
+                </div>
+              ))}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Reminder Dialog */}
+      <Dialog open={addReminderOpen} onOpenChange={setAddReminderOpen}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="text-2xl">Add Reminder</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>Task Name</Label>
+              <Input
+                value={newReminder.task_name}
+                onChange={(e) => setNewReminder((p) => ({ ...p, task_name: e.target.value }))}
+              />
+            </div>
+            <div>
+              <Label>Due Date</Label>
+              <Input
+                type="date"
+                value={newReminder.due_date}
+                onChange={(e) => setNewReminder((p) => ({ ...p, due_date: e.target.value }))}
+              />
+            </div>
+            <div>
+              <Label>Transaction</Label>
+              <Select
+                value={newReminder.transaction_id}
+                onValueChange={(v) => setNewReminder((p) => ({ ...p, transaction_id: v }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select property" />
+                </SelectTrigger>
+                <SelectContent>
+                  {transactions
+                    .filter((t) => !["closed", "cancelled"].includes(t.status))
+                    .map((t) => (
+                      <SelectItem key={t.id} value={t.id}>
+                        {t.property_address}
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Notes</Label>
+              <Textarea
+                value={newReminder.notes}
+                onChange={(e) => setNewReminder((p) => ({ ...p, notes: e.target.value }))}
+              />
+            </div>
           </div>
-        </CardContent>
-      </Card>
+          <DialogFooter>
+            <Button onClick={handleAddReminder} className="clay-element clay-accent-mint border-0">
+              Add Reminder
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Dialog */}
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="text-2xl">
+              {editingItem?.label ? `Edit — ${editingItem.label}` : "Edit Item"}
+            </DialogTitle>
+          </DialogHeader>
+          {editingItem && (
+            <DateEditForm
+              item={editingItem}
+              onSave={handleSaveEdit}
+              onCancel={() => setEditOpen(false)}
+              transactions={transactions}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+    </div>
+  )
+}
+
+function DateEditForm({
+  item,
+  onSave,
+  onCancel,
+  transactions,
+}: {
+  item: any
+  onSave: (payload: any) => void
+  onCancel: () => void
+  transactions: any[]
+}) {
+  const initDate = item.date ? format(item.date, "yyyy-MM-dd") : ""
+  const [date, setDate] = useState(initDate)
+  const [status, setStatus] = useState(item.status || "in_progress")
+  const [notes, setNotes] = useState(item.notes || "")
+  const [transactionId, setTransactionId] = useState(
+    item.transaction?.id ||
+      item.task?.transaction_id ||
+      transactions.find((t) => !["closed", "cancelled"].includes(t.status))?.id ||
+      "",
+  )
+  const isTask = item.type === "task"
+
+  const handleSave = () => {
+    onSave({ date: date || null, status, notes, transaction_id: transactionId })
+  }
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <Label>Date</Label>
+        <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+      </div>
+      <div>
+        <Label>Status</Label>
+        <Select value={status} onValueChange={setStatus}>
+          <SelectTrigger>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {isTask ? (
+              <>
+                <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="completed">Completed</SelectItem>
+                <SelectItem value="extended">Extended</SelectItem>
+                <SelectItem value="negotiating">Negotiating</SelectItem>
+                <SelectItem value="waived">Waived</SelectItem>
+              </>
+            ) : (
+              <>
+                <SelectItem value="in_progress">In Progress</SelectItem>
+                <SelectItem value="completed">Completed</SelectItem>
+                <SelectItem value="extended">Extended</SelectItem>
+                <SelectItem value="negotiating">Negotiating</SelectItem>
+                <SelectItem value="waived">Waived</SelectItem>
+              </>
+            )}
+          </SelectContent>
+        </Select>
+      </div>
+      <div>
+        <Label>Transaction</Label>
+        <Select value={transactionId} onValueChange={setTransactionId}>
+          <SelectTrigger>
+            <SelectValue placeholder="Select transaction" />
+          </SelectTrigger>
+          <SelectContent>
+            {transactions
+              .filter((t) => !["closed", "cancelled"].includes(t.status))
+              .map((t) => (
+                <SelectItem key={t.id} value={t.id}>
+                  {t.property_address}
+                </SelectItem>
+              ))}
+          </SelectContent>
+        </Select>
+      </div>
+      <div>
+        <Label>Notes</Label>
+        <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={4} />
+      </div>
+      <div className="flex gap-2 justify-end">
+        <Button onClick={handleSave} className="clay-element clay-accent-mint">
+          Save
+        </Button>
+        <Button variant="ghost" onClick={onCancel}>
+          Cancel
+        </Button>
+      </div>
     </div>
   )
 }
