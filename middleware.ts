@@ -7,6 +7,10 @@ export async function middleware(request: NextRequest) {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
+  console.log("[v0] Middleware - Checking Supabase environment variables")
+  console.log("[v0] NEXT_PUBLIC_SUPABASE_URL:", supabaseUrl ? "SET" : "NOT SET")
+  console.log("[v0] NEXT_PUBLIC_SUPABASE_ANON_KEY:", supabaseAnonKey ? "SET" : "NOT SET")
+
   if (!supabaseUrl || !supabaseAnonKey) {
     console.log("[v0] Supabase environment variables not found, skipping auth check")
     return supabaseResponse
@@ -30,6 +34,8 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
+  console.log("[v0] Middleware - User authenticated:", user ? user.id : "NO USER")
+
   // 🧩 Protected routes (includes your CRM, transactions, and API endpoints)
   const protectedRoutes = [
     "/dashboard",
@@ -44,12 +50,11 @@ export async function middleware(request: NextRequest) {
     "/api/transactions", // ✅ Added API protection
   ]
 
-  const isProtectedRoute = protectedRoutes.some((route) =>
-    request.nextUrl.pathname.startsWith(route)
-  )
+  const isProtectedRoute = protectedRoutes.some((route) => request.nextUrl.pathname.startsWith(route))
 
   // 🔐 Redirect unauthenticated users
   if (!user && isProtectedRoute) {
+    console.log("[v0] Middleware - Redirecting unauthenticated user from:", request.nextUrl.pathname)
     const url = request.nextUrl.clone()
     url.pathname = "/auth/login"
     url.searchParams.set("redirectedFrom", request.nextUrl.pathname)
@@ -62,7 +67,5 @@ export async function middleware(request: NextRequest) {
 
 // Match everything except static/image assets
 export const config = {
-  matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
-  ],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)"],
 }
