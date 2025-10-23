@@ -1,12 +1,16 @@
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import { createTransactionInDB } from "@/lib/server/transactions";
 
 export async function POST(req: Request) {
   try {
     const body = await req.json();
 
-    // Pass both the request and body so we can read auth cookies
-    const newTransaction = await createTransactionInDB(req, body);
+    // ✅ Get the cookie store for Supabase authentication
+    const cookieStore = cookies();
+
+    // ✅ Pass the cookie store into your DB helper
+    const newTransaction = await createTransactionInDB(cookieStore, body);
 
     return NextResponse.json({
       success: true,
