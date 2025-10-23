@@ -1,34 +1,27 @@
-import { cookies } from "next/headers"
-import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs"
+import { cookies } from "next/headers";
+import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
 
-// Use your Supabase project URL and service key
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
+export async function createTransactionInDB(req: Request, data: any) {
+  const cookieStore = cookies();
+  const supabase = createRouteHandlerClient({ cookies: () => cookieStore });
 
-export async function createTransactionInDB(data: any) {
-  const cookieStore = await cookies()
-  const supabase = createRouteHandlerClient({ cookies: () => cookieStore })
-
+  // Get current user
   const {
     data: { user },
     error: userError,
-  } = await supabase.auth.getUser()
+  } = await supabase.auth.getUser();
 
   if (userError || !user) {
-    throw new Error("User not authenticated")
+    console.error("User not authenticated:", userError);
+    throw new Error("User not authenticated");
   }
 
-  const payload = {
-    ...data,
-    profile_id: user.id,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  }
+  const { data: inserted, error } = await supabase
+    .from("transactions")
+    .insert([{ ...data, user_id: user.id }])
+    .select()
+    .single();
 
-  const { data: inserted, error } = await supabase.from("transactions").insert([payload]).select().single()
-
-  if (error) throw new Error(error.message)
-
-  console.log("✅ Transaction created successfully:", inserted)
-  return inserted
+  if (error) throw new Error(error.message);
+  return inserted;
 }
